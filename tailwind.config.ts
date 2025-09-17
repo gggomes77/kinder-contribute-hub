@@ -47,6 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        waldorf: {
+          earth: "hsl(var(--waldorf-earth))",
+          moss: "hsl(var(--waldorf-moss))",
+          honey: "hsl(var(--waldorf-honey))",
+          cream: "hsl(var(--waldorf-cream))",
+          bark: "hsl(var(--waldorf-bark))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -57,6 +64,10 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Playfair Display", "Georgia", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

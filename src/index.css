@@ -2,41 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Waldorf-inspired design system with natural, earthy tones */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Warm cream background like handmade paper */
+    --background: 45 25% 97%;
+    --foreground: 25 15% 25%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card backgrounds with subtle warmth */
+    --card: 42 30% 95%;
+    --card-foreground: 25 15% 25%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 42 30% 95%;
+    --popover-foreground: 25 15% 25%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Forest green primary - main brand color */
+    --primary: 145 35% 25%;
+    --primary-foreground: 45 25% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Warm golden secondary */
+    --secondary: 42 65% 75%;
+    --secondary-foreground: 25 15% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Soft muted tones */
+    --muted: 40 20% 90%;
+    --muted-foreground: 25 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Warm accent color */
+    --accent: 35 45% 65%;
+    --accent-foreground: 25 15% 25%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Gentle destructive color */
+    --destructive: 10 65% 55%;
+    --destructive-foreground: 45 25% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Natural borders */
+    --border: 40 15% 85%;
+    --input: 40 15% 85%;
+    --ring: 145 35% 25%;
 
-    --radius: 0.5rem;
+    /* Organic radius */
+    --radius: 1rem;
+
+    /* Waldorf-specific colors */
+    --waldorf-earth: 25 30% 45%;
+    --waldorf-moss: 120 25% 35%;
+    --waldorf-honey: 42 70% 65%;
+    --waldorf-cream: 45 40% 92%;
+    --waldorf-bark: 20 25% 35%;
+
+    /* Gradients for beautiful backgrounds */
+    --gradient-warm: linear-gradient(135deg, hsl(var(--waldorf-cream)), hsl(var(--waldorf-honey) / 0.3));
+    --gradient-earth: linear-gradient(135deg, hsl(var(--waldorf-earth)), hsl(var(--waldorf-bark)));
+    --gradient-nature: linear-gradient(135deg, hsl(var(--waldorf-moss)), hsl(var(--primary)));
+
+    /* Shadows with warmth */
+    --shadow-soft: 0 4px 12px hsl(var(--waldorf-earth) / 0.15);
+    --shadow-warm: 0 8px 25px hsl(var(--waldorf-honey) / 0.25);
+
+    /* Transitions */
+    --transition-gentle: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +126,51 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    background: var(--gradient-warm);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Waldorf-inspired utility classes */
+  .card-waldorf {
+    @apply bg-card border border-border rounded-2xl shadow-[var(--shadow-soft)] transition-[var(--transition-gentle)];
+  }
+  
+  .card-waldorf:hover {
+    @apply shadow-[var(--shadow-warm)] scale-[1.02];
+  }
+  
+  .btn-waldorf {
+    @apply bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium transition-[var(--transition-gentle)] hover:scale-105 shadow-[var(--shadow-soft)];
+  }
+  
+  .btn-waldorf-secondary {
+    @apply bg-secondary text-secondary-foreground px-6 py-3 rounded-xl font-medium transition-[var(--transition-gentle)] hover:scale-105 shadow-[var(--shadow-soft)];
+  }
+  
+  .input-waldorf {
+    @apply bg-card border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-[var(--transition-gentle)];
+  }
+
+  .text-waldorf-earth {
+    color: hsl(var(--waldorf-earth));
+  }
+  
+  .text-waldorf-moss {
+    color: hsl(var(--waldorf-moss));
+  }
+  
+  .text-waldorf-honey {
+    color: hsl(var(--waldorf-honey));
+  }
+  
+  .bg-waldorf-gradient {
+    background: var(--gradient-nature);
+  }
+
+  .bg-waldorf-warm {
+    background: var(--gradient-warm);
   }
 }
