@@ -21,12 +21,12 @@ const Dashboard = () => {
           <div className="absolute inset-0 bg-waldorf-gradient opacity-80"></div>
           <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
             <div className="text-center w-full">
-              <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mb-2">
-                Waldorf School Community Dashboard
-              </h1>
-              <p className="text-lg md:text-xl text-white/90 font-medium">
-                Together we nurture our children's learning environment
-              </p>
+            <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mb-2">
+              Giardino della Fenice Dashboard
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 font-medium">
+              Insieme coltiviamo l'ambiente di apprendimento dei nostri bambini
+            </p>
             </div>
           </div>
         </div>
@@ -44,11 +44,11 @@ const Dashboard = () => {
                 <Heart className="w-6 h-6 text-waldorf-moss" />
               </div>
               <h2 className="text-2xl font-serif text-waldorf-earth mb-2">
-                Welcome to Our Community Space
+                Benvenuti nel Nostro Spazio Comunitario
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                This dashboard helps our parent community coordinate volunteer time and cleaning schedules. 
-                Your contributions, big or small, help create the nurturing environment our children thrive in.
+                Questa dashboard aiuta la nostra comunità di genitori a coordinare il tempo di volontariato e gli orari delle pulizie. 
+                I vostri contributi, grandi o piccoli, aiutano a creare l'ambiente accogliente in cui i nostri bambini prosperano.
               </p>
             </CardContent>
           </Card>
@@ -61,14 +61,14 @@ const Dashboard = () => {
                 className="flex items-center gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Clock className="w-4 h-4" />
-                Time Contributions
+                Contributi di Tempo
               </TabsTrigger>
               <TabsTrigger 
                 value="cleaning-calendar" 
                 className="flex items-center gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Calendar className="w-4 h-4" />
-                Cleaning Calendar
+                Calendario Pulizie
               </TabsTrigger>
             </TabsList>
 
@@ -88,11 +88,11 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 text-center">
           <p className="flex items-center justify-center gap-2 mb-2">
             <TreePine className="w-5 h-5" />
-            <span className="font-serif">Waldorf School Parent Community</span>
+            <span className="font-serif">Comunità Genitori Giardino della Fenice</span>
             <TreePine className="w-5 h-5" />
           </p>
           <p className="text-white/80 text-sm">
-            Building community through shared responsibility and care
+            Costruiamo comunità attraverso responsabilità condivisa e cura
           </p>
         </div>
       </footer>

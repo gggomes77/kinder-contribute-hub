@@ -17,14 +17,14 @@ interface CleaningSlot {
 }
 
 const CLEANING_AREAS = [
-  'Main Classroom',
-  'Art Room',
-  'Music Room',
-  'Library',
-  'Kitchen',
-  'Playground',
-  'Garden',
-  'Entrance Hall',
+  'Aula Principale',
+  'Laboratorio Arte',
+  'Aula Musica',
+  'Biblioteca',
+  'Cucina',
+  'Cortile',
+  'Giardino',
+  'Ingresso',
 ];
 
 export const CleaningCalendar = () => {
@@ -95,7 +95,7 @@ export const CleaningCalendar = () => {
   const handleSignUp = (slotId: string) => {
     if (!parentName.trim()) {
       toast({
-        title: "Please enter your name first",
+        title: "Inserisci prima il tuo nome",
         variant: "destructive",
       });
       return;
@@ -110,8 +110,8 @@ export const CleaningCalendar = () => {
         };
         
         toast({
-          title: "Successfully signed up!",
-          description: `You're signed up for ${slot.area} cleaning on ${new Date(slot.date).toLocaleDateString()}`,
+          title: "Iscrizione completata!",
+          description: `Ti sei iscritto per le pulizie ${slot.area} il ${new Date(slot.date).toLocaleDateString('it-IT')}`,
         });
         
         return updatedSlot;
@@ -125,7 +125,7 @@ export const CleaningCalendar = () => {
     
     if (!selectedDate || !selectedTime || !selectedArea) {
       toast({
-        title: "Please fill in all fields",
+        title: "Compila tutti i campi",
         variant: "destructive",
       });
       return;
@@ -147,8 +147,8 @@ export const CleaningCalendar = () => {
     setSelectedArea('');
     
     toast({
-      title: "New cleaning slot created!",
-      description: `Added ${selectedArea} cleaning slot for ${new Date(selectedDate).toLocaleDateString()}`,
+      title: "Nuovo turno di pulizie creato!",
+      description: `Aggiunto turno pulizie ${selectedArea} per il ${new Date(selectedDate).toLocaleDateString('it-IT')}`,
     });
   };
 
@@ -164,12 +164,12 @@ export const CleaningCalendar = () => {
       <Card className="card-waldorf">
         <CardContent className="p-6">
           <div className="space-y-2">
-            <Label htmlFor="signupName">Your Name (for signing up)</Label>
+            <Label htmlFor="signupName">Il Tuo Nome (per le iscrizioni)</Label>
             <Input
               id="signupName"
               value={parentName}
               onChange={(e) => setParentName(e.target.value)}
-              placeholder="Enter your name to sign up for cleaning slots"
+              placeholder="Inserisci il tuo nome per iscriverti ai turni di pulizie"
               className="input-waldorf"
             />
           </div>
@@ -181,14 +181,14 @@ export const CleaningCalendar = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth">
             <Calendar className="w-5 h-5" />
-            Available Cleaning Slots
+            Turni di Pulizie Disponibili
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {upcomingSlots.length === 0 ? (
               <p className="text-muted-foreground text-center py-8 col-span-full">
-                No available cleaning slots. Create a new one below!
+                Nessun turno di pulizie disponibile. Creane uno nuovo qui sotto!
               </p>
             ) : (
               upcomingSlots.map(slot => (
@@ -199,14 +199,14 @@ export const CleaningCalendar = () => {
                       <span className="font-medium text-waldorf-earth">{slot.area}</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(slot.date).toLocaleDateString()} at {slot.time}
+                      {new Date(slot.date).toLocaleDateString('it-IT')} alle {slot.time}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {slot.currentSlots}/{slot.maxSlots} slots filled
+                      {slot.currentSlots}/{slot.maxSlots} posti occupati
                     </p>
                     {slot.parentName && (
                       <p className="text-xs text-waldorf-moss">
-                        Signed up: {slot.parentName}
+                        Iscritti: {slot.parentName}
                       </p>
                     )}
                     <Button
@@ -215,7 +215,7 @@ export const CleaningCalendar = () => {
                       className="w-full btn-waldorf-secondary"
                       size="sm"
                     >
-                      {slot.currentSlots >= slot.maxSlots ? 'Full' : 'Sign Up'}
+                      {slot.currentSlots >= slot.maxSlots ? 'Completo' : 'Iscriviti'}
                     </Button>
                   </div>
                 </div>
@@ -230,14 +230,14 @@ export const CleaningCalendar = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth">
             <CalendarCheck className="w-5 h-5" />
-            Create New Cleaning Slot
+            Crea Nuovo Turno di Pulizie
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={createNewSlot} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">Data</Label>
                 <Input
                   id="date"
                   type="date"
@@ -248,7 +248,7 @@ export const CleaningCalendar = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
+                <Label htmlFor="time">Orario</Label>
                 <Input
                   id="time"
                   type="time"
@@ -265,7 +265,7 @@ export const CleaningCalendar = () => {
                   onChange={(e) => setSelectedArea(e.target.value)}
                   className="input-waldorf w-full"
                 >
-                  <option value="">Select area...</option>
+                  <option value="">Seleziona area...</option>
                   {CLEANING_AREAS.map(area => (
                     <option key={area} value={area}>{area}</option>
                   ))}
@@ -273,7 +273,7 @@ export const CleaningCalendar = () => {
               </div>
             </div>
             <Button type="submit" className="btn-waldorf">
-              Create Cleaning Slot
+              Crea Turno di Pulizie
             </Button>
           </form>
         </CardContent>
