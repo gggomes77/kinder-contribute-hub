@@ -9,10 +9,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 interface TimeEntry {
   id: string;
-  parentName: string;
+  family_id: string;
   hours: number;
   activity: string;
   date: string;
+  family?: {
+    display_name: string;
+  };
 }
 
 export const TimeTracker = () => {

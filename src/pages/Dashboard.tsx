@@ -9,6 +9,7 @@ import bannerImage from '@/assets/waldorf-community-banner.jpg';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('time-tracker');
+  const { currentFamily, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-waldorf-warm">
