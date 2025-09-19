@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeTracker } from '@/components/TimeTracker';
 import { CleaningCalendar } from '@/components/CleaningCalendar';
 import { Clock, Calendar, Heart, TreePine } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import bannerImage from '@/assets/waldorf-community-banner.jpg';
 
 const Dashboard = () => {

@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Plus, Clock, Users, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TimeEntry {
   id: string;
@@ -13,35 +15,52 @@ interface TimeEntry {
   hours: number;
   activity: string;
   date: string;
-  family?: {
+  families?: {
     display_name: string;
   };
 }
 
 export const TimeTracker = () => {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [parentName, setParentName] = useState('');
   const [hours, setHours] = useState('');
   const [activity, setActivity] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currentFamily } = useAuth();
 
-  // Load data from localStorage on component mount
+  // Load data from Supabase on component mount
   useEffect(() => {
-    const savedEntries = localStorage.getItem('waldorf-time-entries');
-    if (savedEntries) {
-      setEntries(JSON.parse(savedEntries));
-    }
+    loadEntries();
   }, []);
 
-  // Save to localStorage whenever entries change
-  useEffect(() => {
-    localStorage.setItem('waldorf-time-entries', JSON.stringify(entries));
-  }, [entries]);
+  const loadEntries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('time_contributions')
+        .select(`
+          *,
+          families (
+            display_name
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-  const handleSubmit = (e: React.FormEvent) => {
+      if (error) throw error;
+      setEntries(data || []);
+    } catch (error) {
+      console.error('Error loading entries:', error);
+      toast({
+        title: "Errore nel caricamento",
+        description: "Non è stato possibile caricare i contributi",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!parentName || !hours || !activity) {
+    if (!hours || !activity) {
       toast({
         title: "Compila tutti i campi",
         variant: "destructive",
@@ -49,31 +68,53 @@ export const TimeTracker = () => {
       return;
     }
 
-    const newEntry: TimeEntry = {
-      id: Date.now().toString(),
-      parentName,
-      hours: parseFloat(hours),
-      activity,
-      date: new Date().toLocaleDateString(),
-    };
+    if (!currentFamily) {
+      toast({
+        title: "Errore di autenticazione",
+        description: "Per favore effettua il login",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setEntries(prev => [newEntry, ...prev]);
-    setParentName('');
-    setHours('');
-    setActivity('');
-    
-    toast({
-      title: "Contributo aggiunto!",
-      description: `Grazie ${parentName} per aver contribuito ${hours} ore!`,
-    });
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('time_contributions')
+        .insert({
+          family_id: currentFamily.id,
+          hours: parseFloat(hours),
+          activity,
+        });
+
+      if (error) throw error;
+
+      setHours('');
+      setActivity('');
+      await loadEntries(); // Reload to get updated data
+      
+      toast({
+        title: "Contributo aggiunto!",
+        description: `Grazie per aver contribuito ${hours} ore!`,
+      });
+    } catch (error) {
+      console.error('Error adding contribution:', error);
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile aggiungere il contributo",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const totalHours = entries.reduce((sum, entry) => sum + entry.hours, 0);
-  const uniqueParents = new Set(entries.map(entry => entry.parentName)).size;
+  const uniqueParents = new Set(entries.map(entry => entry.families?.display_name)).size;
 
   // Prepare chart data - group by family
   const familyContributions = entries.reduce((acc, entry) => {
-    const familyName = entry.parentName;
+    const familyName = entry.families?.display_name || 'Sconosciuto';
     if (!acc[familyName]) {
       acc[familyName] = 0;
     }
@@ -170,13 +211,12 @@ export const TimeTracker = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="parentName">Nome Famiglia</Label>
+                <Label htmlFor="family">Famiglia</Label>
                 <Input
-                  id="parentName"
-                  value={parentName}
-                  onChange={(e) => setParentName(e.target.value)}
-                  placeholder="Inserisci il nome della famiglia"
-                  className="input-waldorf"
+                  id="family"
+                  value={currentFamily?.display_name || ''}
+                  disabled
+                  className="input-waldorf bg-muted"
                 />
               </div>
               <div className="space-y-2">
@@ -190,6 +230,7 @@ export const TimeTracker = () => {
                   onChange={(e) => setHours(e.target.value)}
                   placeholder="es. 2.5"
                   className="input-waldorf"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -203,8 +244,8 @@ export const TimeTracker = () => {
                 className="input-waldorf"
               />
             </div>
-            <Button type="submit" className="btn-waldorf">
-              Aggiungi Contributo
+            <Button type="submit" className="btn-waldorf" disabled={loading}>
+              {loading ? 'Aggiungendo...' : 'Aggiungi Contributo'}
             </Button>
           </form>
         </CardContent>
@@ -225,12 +266,12 @@ export const TimeTracker = () => {
               entries.slice(0, 10).map(entry => (
                 <div key={entry.id} className="flex items-center justify-between p-3 bg-waldorf-cream rounded-lg">
                   <div>
-                    <p className="font-medium text-waldorf-earth">{entry.parentName}</p>
+                    <p className="font-medium text-waldorf-earth">{entry.families?.display_name || 'Sconosciuto'}</p>
                     <p className="text-sm text-muted-foreground">{entry.activity}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-waldorf-moss">{entry.hours}h</p>
-                    <p className="text-xs text-muted-foreground">{entry.date}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString()}</p>
                   </div>
                 </div>
               ))
