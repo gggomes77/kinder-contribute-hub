@@ -81,15 +81,6 @@ const LoginForm = () => {
                 {isLoading ? "Accesso in corso..." : "Accedi"}
               </Button>
             </form>
-            
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-sm text-blue-900 mb-2">
-                Famiglie disponibili:
-              </h3>
-              <p className="text-xs text-blue-800">
-                rossi, bianchi, verdi, ferrari, romano
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>
