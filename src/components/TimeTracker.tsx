@@ -73,7 +73,13 @@ export const TimeTracker = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('=== STARTING CONTRIBUTION SUBMISSION ===');
+    console.log('Hours:', hours);
+    console.log('Activity:', activity);
+    console.log('Current family:', currentFamily);
+    
     if (!hours || !activity) {
+      console.log('Missing hours or activity');
       toast({
         title: "Compila tutti i campi",
         variant: "destructive",
@@ -82,6 +88,7 @@ export const TimeTracker = () => {
     }
 
     if (!currentFamily) {
+      console.log('No current family');
       toast({
         title: "Errore di autenticazione",
         description: "Per favore effettua il login",
@@ -92,6 +99,7 @@ export const TimeTracker = () => {
 
     setLoading(true);
     try {
+      console.log('Setting config for family:', currentFamily.username);
       // Ensure session configuration is set before database operation
       const { error: configError } = await supabase.rpc('set_config', {
         setting_name: 'app.current_family',
@@ -102,6 +110,13 @@ export const TimeTracker = () => {
         console.error('Config error:', configError);
         throw new Error('Failed to set session configuration');
       }
+      console.log('Config set successfully');
+
+      console.log('Inserting contribution with data:', {
+        family_id: currentFamily.id,
+        hours: parseFloat(hours),
+        activity,
+      });
 
       const { error } = await supabase
         .from('time_contributions')
@@ -113,8 +128,11 @@ export const TimeTracker = () => {
 
       if (error) {
         console.error('Insert error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
+      
+      console.log('Insert successful!');
 
       setHours('');
       setActivity('');
