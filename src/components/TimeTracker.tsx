@@ -34,7 +34,20 @@ export const TimeTracker = () => {
   }, []);
 
   const loadEntries = async () => {
+    if (!currentFamily) return;
+    
     try {
+      // Ensure session configuration is set before database operation
+      const { error: configError } = await supabase.rpc('set_config', {
+        setting_name: 'app.current_family',
+        setting_value: currentFamily.username
+      });
+
+      if (configError) {
+        console.error('Config error:', configError);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('time_contributions')
         .select(`
@@ -79,6 +92,17 @@ export const TimeTracker = () => {
 
     setLoading(true);
     try {
+      // Ensure session configuration is set before database operation
+      const { error: configError } = await supabase.rpc('set_config', {
+        setting_name: 'app.current_family',
+        setting_value: currentFamily.username
+      });
+
+      if (configError) {
+        console.error('Config error:', configError);
+        throw new Error('Failed to set session configuration');
+      }
+
       const { error } = await supabase
         .from('time_contributions')
         .insert({
@@ -87,7 +111,10 @@ export const TimeTracker = () => {
           activity,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
 
       setHours('');
       setActivity('');

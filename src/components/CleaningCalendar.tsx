@@ -86,6 +86,17 @@ export const CleaningCalendar = () => {
 
     setLoading(true);
     try {
+      // Ensure session configuration is set before database operations
+      const { error: configError } = await supabase.rpc('set_config', {
+        setting_name: 'app.current_family',
+        setting_value: currentFamily.username
+      });
+
+      if (configError) {
+        console.error('Config error:', configError);
+        throw new Error('Failed to set session configuration');
+      }
+
       // Check if family is already signed up for this slot
       const { data: existingAssignment } = await supabase
         .from('cleaning_assignments')
