@@ -9,8 +9,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import bannerImage from '@/assets/waldorf-community-banner.jpg';
 
 const Dashboard = () => {
+  console.log('Dashboard component rendering');
   const [activeTab, setActiveTab] = useState('time-tracker');
-  const { currentFamily, logout } = useAuth();
+  
+  let currentFamily, logout;
+  try {
+    const authResult = useAuth();
+    currentFamily = authResult.currentFamily;
+    logout = authResult.logout;
+    console.log('Auth context loaded successfully', { currentFamily });
+  } catch (error) {
+    console.error('Error accessing auth context:', error);
+    return <div>Error: Unable to access authentication context</div>;
+  }
 
   return (
     <div className="min-h-screen bg-waldorf-warm">
