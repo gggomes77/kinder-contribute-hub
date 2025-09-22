@@ -22,14 +22,10 @@ interface CleaningSlot {
 }
 
 const CLEANING_AREAS = [
-  'Aula Principale',
-  'Laboratorio Arte',
-  'Aula Musica',
-  'Biblioteca',
-  'Cucina',
-  'Cortile',
+  'Scuola',
   'Giardino',
-  'Ingresso',
+  'Vetri',
+  'Pavimento',
 ];
 
 export const CleaningCalendar = () => {
