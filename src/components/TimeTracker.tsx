@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Clock, Users, BarChart3 } from 'lucide-react';
+import { Plus, Clock, Users, BarChart3, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
@@ -151,6 +151,46 @@ export const TimeTracker = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (entryId: string) => {
+    if (!currentFamily?.is_admin) {
+      toast({
+        title: "Accesso negato",
+        description: "Solo gli amministratori possono eliminare i contributi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Set config before delete operation
+      await supabase.rpc('set_config', {
+        setting_name: 'app.current_family',
+        setting_value: currentFamily.username
+      });
+
+      const { error } = await supabase
+        .from('time_contributions')
+        .delete()
+        .eq('id', entryId);
+
+      if (error) throw error;
+
+      await loadEntries(); // Reload to get updated data
+      
+      toast({
+        title: "Contributo eliminato",
+        description: "Il contributo è stato eliminato con successo",
+      });
+    } catch (error) {
+      console.error('Error deleting contribution:', error);
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile eliminare il contributo",
+        variant: "destructive",
+      });
     }
   };
 
@@ -310,13 +350,25 @@ export const TimeTracker = () => {
             ) : (
               entries.slice(0, 10).map(entry => (
                 <div key={entry.id} className="flex items-center justify-between p-3 bg-waldorf-cream rounded-lg">
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-waldorf-earth">{entry.families?.display_name || 'Sconosciuto'}</p>
                     <p className="text-sm text-muted-foreground">{entry.activity}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-waldorf-moss">{entry.hours}h</p>
-                    <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString()}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-semibold text-waldorf-moss">{entry.hours}h</p>
+                      <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString()}</p>
+                    </div>
+                    {currentFamily?.is_admin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(entry.id)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 p-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))

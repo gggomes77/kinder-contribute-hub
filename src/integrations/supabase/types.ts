@@ -85,6 +85,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_admin: boolean
           updated_at: string
           username: string
         }
@@ -92,6 +93,7 @@ export type Database = {
           created_at?: string
           display_name: string
           id?: string
+          is_admin?: boolean
           updated_at?: string
           username: string
         }
@@ -99,6 +101,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_admin?: boolean
           updated_at?: string
           username?: string
         }

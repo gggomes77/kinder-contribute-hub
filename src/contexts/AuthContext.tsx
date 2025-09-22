@@ -5,6 +5,7 @@ interface Family {
   id: string;
   username: string;
   display_name: string;
+  is_admin: boolean;
 }
 
 interface AuthContextType {
