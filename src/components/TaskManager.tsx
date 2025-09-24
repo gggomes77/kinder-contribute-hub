@@ -83,10 +83,15 @@ const TaskManager = () => {
 
     setIsLoading(true);
     try {
-      await supabase.rpc('set_config', {
+      const { error: configError } = await supabase.rpc('set_config', {
         setting_name: 'app.current_family',
         setting_value: currentFamily.username
       });
+
+      if (configError) {
+        console.error('Config error:', configError);
+        throw configError;
+      }
 
       const { error } = await supabase
         .from('tasks')
@@ -128,10 +133,15 @@ const TaskManager = () => {
     if (!currentFamily) return;
 
     try {
-      await supabase.rpc('set_config', {
+      const { error: configError } = await supabase.rpc('set_config', {
         setting_name: 'app.current_family',
         setting_value: currentFamily.username
       });
+
+      if (configError) {
+        console.error('Config error:', configError);
+        throw configError;
+      }
 
       const { error } = await supabase
         .from('task_assignments')
@@ -161,10 +171,15 @@ const TaskManager = () => {
     if (!currentFamily?.is_admin) return;
 
     try {
-      await supabase.rpc('set_config', {
+      const { error: configError } = await supabase.rpc('set_config', {
         setting_name: 'app.current_family',
         setting_value: currentFamily.username
       });
+
+      if (configError) {
+        console.error('Config error:', configError);
+        throw configError;
+      }
 
       const { error } = await supabase
         .from('tasks')

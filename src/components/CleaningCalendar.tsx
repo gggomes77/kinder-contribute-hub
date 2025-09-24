@@ -111,10 +111,15 @@ const CleaningCalendar = () => {
     }
 
     try {
-      await supabase.rpc('set_config', {
+      const { error: configError } = await supabase.rpc('set_config', {
         setting_name: 'app.current_family',
         setting_value: currentFamily.username
       });
+
+      if (configError) {
+        console.error('Config error:', configError);
+        throw configError;
+      }
 
       const { error } = await supabase
         .from('cleaning_assignments')
