@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Calendar, CalendarCheck, MapPin } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Clock, MapPin, Users } from "lucide-react";
+import { format, isSameDay } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface CleaningSlot {
   id: string;
@@ -15,6 +19,8 @@ interface CleaningSlot {
   area: string;
   max_slots: number;
   assignments?: Array<{
+    id: string;
+    family_id: string;
     families: {
       display_name: string;
     };
@@ -22,298 +28,369 @@ interface CleaningSlot {
 }
 
 const CLEANING_AREAS = [
-  'Scuola',
-  'Giardino',
-  'Vetri',
-  'Pavimento',
+  "Cucina", "Bagni", "Aule", "Corridoi", "Giardino", "Mensa"
 ];
 
-export const CleaningCalendar = () => {
+const CleaningCalendar = () => {
   const [slots, setSlots] = useState<CleaningSlot[]>([]);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [selectedArea, setSelectedArea] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [newSlot, setNewSlot] = useState({
+    date: format(new Date(), 'yyyy-MM-dd'),
+    time: '',
+    area: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const { currentFamily } = useAuth();
+  const { toast } = useToast();
 
-  // Load cleaning slots from Supabase
   useEffect(() => {
     loadSlots();
   }, []);
 
   const loadSlots = async () => {
+    if (!currentFamily) return;
+    
     try {
+      await supabase.rpc('set_config', {
+        setting_name: 'app.current_family',
+        setting_value: currentFamily.username
+      });
+
       const { data, error } = await supabase
         .from('cleaning_slots')
         .select(`
           *,
-          cleaning_assignments (
-            families (
-              display_name
-            )
+          assignments:cleaning_assignments(
+            id,
+            family_id,
+            families(display_name)
           )
         `)
-        .gte('date', new Date().toISOString().split('T')[0])
-        .order('date')
-        .order('time');
+        .order('date', { ascending: true });
 
       if (error) throw error;
       setSlots(data || []);
     } catch (error) {
-      console.error('Error loading cleaning slots:', error);
+      console.error('Error loading slots:', error);
       toast({
-        title: "Errore nel caricamento",
-        description: "Non è stato possibile caricare i turni di pulizie",
-        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile caricare gli slot di pulizia",
+        variant: "destructive"
       });
     }
   };
 
   const handleSignUp = async (slotId: string) => {
-    if (!currentFamily) {
+    if (!currentFamily) return;
+
+    const slot = slots.find(s => s.id === slotId);
+    if (!slot) return;
+
+    // Check if user is already signed up
+    const isAlreadySignedUp = slot.assignments?.some(
+      assignment => assignment.family_id === currentFamily.id
+    );
+
+    if (isAlreadySignedUp) {
       toast({
-        title: "Errore di autenticazione",
-        description: "Per favore effettua il login",
-        variant: "destructive",
+        title: "Attenzione",
+        description: "Sei già iscritto a questo slot!",
+        variant: "destructive"
       });
       return;
     }
 
-    setLoading(true);
+    // Check if slot is full
+    if ((slot.assignments?.length || 0) >= slot.max_slots) {
+      toast({
+        title: "Slot pieno",
+        description: "Questo slot è già completo",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      // Ensure session configuration is set before database operations
-      const { error: configError } = await supabase.rpc('set_config', {
+      await supabase.rpc('set_config', {
         setting_name: 'app.current_family',
         setting_value: currentFamily.username
       });
 
-      if (configError) {
-        console.error('Config error:', configError);
-        throw new Error('Failed to set session configuration');
-      }
-
-      // Check if family is already signed up for this slot
-      const { data: existingAssignment } = await supabase
-        .from('cleaning_assignments')
-        .select('id')
-        .eq('family_id', currentFamily.id)
-        .eq('cleaning_slot_id', slotId)
-        .single();
-
-      if (existingAssignment) {
-        toast({
-          title: "Già iscritto",
-          description: "Sei già iscritto a questo turno di pulizie",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check if slot is full
-      const slot = slots.find(s => s.id === slotId);
-      if (slot && slot.assignments && slot.assignments.length >= slot.max_slots) {
-        toast({
-          title: "Turno completo",
-          description: "Questo turno di pulizie è già completo",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create assignment
       const { error } = await supabase
         .from('cleaning_assignments')
         .insert({
-          family_id: currentFamily.id,
           cleaning_slot_id: slotId,
+          family_id: currentFamily.id
         });
 
       if (error) throw error;
 
-      await loadSlots(); // Reload to get updated data
-      
+      await loadSlots();
       toast({
-        title: "Iscrizione completata!",
-        description: `Ti sei iscritto per le pulizie ${slot?.area} il ${slot ? new Date(slot.date).toLocaleDateString('it-IT') : ''}`,
+        title: "Successo",
+        description: "Ti sei iscritto allo slot con successo!"
       });
     } catch (error) {
-      console.error('Error signing up for cleaning slot:', error);
+      console.error('Error signing up for slot:', error);
       toast({
         title: "Errore",
-        description: "Non è stato possibile iscriversi al turno di pulizie",
-        variant: "destructive",
+        description: "Impossibile iscriversi allo slot",
+        variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const createNewSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedDate || !selectedTime || !selectedArea) {
+    if (!newSlot.time || !newSlot.area) {
       toast({
-        title: "Compila tutti i campi",
-        variant: "destructive",
+        title: "Errore",
+        description: "Compila tutti i campi obbligatori",
+        variant: "destructive"
       });
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
     try {
+      await supabase.rpc('set_config', {
+        setting_name: 'app.current_family',
+        setting_value: currentFamily?.username || ''
+      });
+
       const { error } = await supabase
         .from('cleaning_slots')
         .insert({
-          date: selectedDate,
-          time: selectedTime,
-          area: selectedArea,
-          max_slots: 2,
+          date: newSlot.date,
+          time: newSlot.time,
+          area: newSlot.area,
+          max_slots: 2
         });
 
       if (error) throw error;
 
-      setSelectedDate('');
-      setSelectedTime('');
-      setSelectedArea('');
-      await loadSlots(); // Reload to get updated data
-      
+      setNewSlot({
+        date: format(new Date(), 'yyyy-MM-dd'),
+        time: '',
+        area: ''
+      });
+
+      await loadSlots();
       toast({
-        title: "Nuovo turno di pulizie creato!",
-        description: `Aggiunto turno pulizie ${selectedArea} per il ${new Date(selectedDate).toLocaleDateString('it-IT')}`,
+        title: "Successo",
+        description: "Nuovo slot creato con successo!"
       });
     } catch (error) {
-      console.error('Error creating cleaning slot:', error);
+      console.error('Error creating slot:', error);
       toast({
         title: "Errore",
-        description: "Non è stato possibile creare il turno di pulizie",
-        variant: "destructive",
+        description: "Impossibile creare il nuovo slot",
+        variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const availableSlots = slots.filter(slot => 
-    !slot.assignments || slot.assignments.length < slot.max_slots
-  );
-  const upcomingSlots = availableSlots.slice(0, 12);
+  // Get slots for a specific date
+  const getSlotsForDate = (date: Date) => {
+    return slots.filter(slot => isSameDay(new Date(slot.date), date));
+  };
+
+  // Determine day status for calendar styling
+  const getDayStatus = (date: Date) => {
+    const daySlots = getSlotsForDate(date);
+    if (daySlots.length === 0) return 'none';
+    
+    const totalAvailable = daySlots.reduce((sum, slot) => sum + slot.max_slots, 0);
+    const totalOccupied = daySlots.reduce((sum, slot) => sum + (slot.assignments?.length || 0), 0);
+    
+    if (totalOccupied >= totalAvailable) return 'full';
+    if (totalOccupied > 0) return 'partial';
+    return 'available';
+  };
+
+  // Get selected date slots
+  const selectedDateSlots = selectedDate ? getSlotsForDate(selectedDate) : [];
 
   return (
     <div className="space-y-6">
-      {/* Available Cleaning Slots */}
-      <Card className="card-waldorf">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth">
-            <Calendar className="w-5 h-5" />
-            Turni di Pulizie Disponibili
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upcomingSlots.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8 col-span-full">
-                Nessun turno di pulizie disponibile. Creane uno nuovo qui sotto!
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-waldorf-earth mb-2">Calendario delle Pulizie</h2>
+        <p className="text-muted-foreground">Seleziona una data per vedere i turni disponibili</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Calendar Section */}
+        <Card className="card-waldorf">
+          <CardHeader>
+            <CardTitle className="text-waldorf-moss">Calendario</CardTitle>
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span>Disponibile</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <span>Parziale</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <span>Completo</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              className="rounded-md border pointer-events-auto"
+              modifiers={{
+                available: (date) => getDayStatus(date) === 'available',
+                partial: (date) => getDayStatus(date) === 'partial', 
+                full: (date) => getDayStatus(date) === 'full'
+              }}
+              modifiersStyles={{
+                available: { backgroundColor: 'rgba(34, 197, 94, 0.3)' },
+                partial: { backgroundColor: 'rgba(234, 179, 8, 0.3)' },
+                full: { backgroundColor: 'rgba(239, 68, 68, 0.3)' }
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Selected Date Slots */}
+        <Card className="card-waldorf">
+          <CardHeader>
+            <CardTitle className="text-waldorf-moss">
+              Turni per {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'Seleziona una data'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {selectedDateSlots.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nessun turno disponibile per questa data.
               </p>
             ) : (
-              upcomingSlots.map(slot => {
-                const currentAssignments = slot.assignments?.length || 0;
-                const assignedFamilies = slot.assignments?.map(a => a.families.display_name).join(', ') || '';
-                const isUserSignedUp = slot.assignments?.some(a => 
-                  currentFamily && a.families.display_name === currentFamily.display_name
-                );
-                
-                return (
-                  <div key={slot.id} className="p-4 bg-waldorf-cream rounded-lg border border-border">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-waldorf-moss" />
-                        <span className="font-medium text-waldorf-earth">{slot.area}</span>
+              <div className="space-y-4">
+                {selectedDateSlots.map((slot) => (
+                  <div key={slot.id} className="border border-border rounded-xl p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Clock className="h-4 w-4" />
+                            {slot.time}
+                          </span>
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            {slot.area}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {slot.assignments?.length || 0}/{slot.max_slots} posti occupati
+                          </span>
+                        </div>
+
+                        {slot.assignments && slot.assignments.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            <span className="text-sm text-muted-foreground">Iscritti:</span>
+                            {slot.assignments.map((assignment) => (
+                              <Badge key={assignment.id} variant="secondary">
+                                {assignment.families.display_name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(slot.date).toLocaleDateString('it-IT')} alle {slot.time}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {currentAssignments}/{slot.max_slots} posti occupati
-                      </p>
-                      {assignedFamilies && (
-                        <p className="text-xs text-waldorf-moss">
-                          Iscritti: {assignedFamilies}
-                        </p>
+
+                      {(slot.assignments?.length || 0) < slot.max_slots && (
+                        <Button
+                          onClick={() => handleSignUp(slot.id)}
+                          className="btn-waldorf"
+                          size="sm"
+                        >
+                          Iscriviti
+                        </Button>
                       )}
-                      <Button
-                        onClick={() => handleSignUp(slot.id)}
-                        disabled={loading || currentAssignments >= slot.max_slots || isUserSignedUp}
-                        className="w-full btn-waldorf-secondary"
-                        size="sm"
-                      >
-                        {isUserSignedUp 
-                          ? 'Già iscritto' 
-                          : currentAssignments >= slot.max_slots 
-                            ? 'Completo' 
-                            : loading 
-                              ? 'Caricamento...' 
-                              : 'Iscriviti'
-                        }
-                      </Button>
                     </div>
                   </div>
-                );
-              })
+                ))}
+              </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Create New Slot */}
+      {/* Create New Slot Section */}
       <Card className="card-waldorf">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth">
-            <CalendarCheck className="w-5 h-5" />
-            Crea Nuovo Turno di Pulizie
+          <CardTitle className="flex items-center gap-2 text-waldorf-moss">
+            <Plus className="h-5 w-5" />
+            Crea Nuovo Slot
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={createNewSlot} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Data</Label>
+              <div>
+                <label htmlFor="date" className="block text-sm font-medium mb-2">
+                  Data
+                </label>
                 <Input
                   id="date"
                   type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  value={newSlot.date}
+                  onChange={(e) => setNewSlot({ ...newSlot, date: e.target.value })}
                   className="input-waldorf"
+                  required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Orario</Label>
+
+              <div>
+                <label htmlFor="time" className="block text-sm font-medium mb-2">
+                  Orario
+                </label>
                 <Input
                   id="time"
                   type="time"
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
+                  value={newSlot.time}
+                  onChange={(e) => setNewSlot({ ...newSlot, time: e.target.value })}
                   className="input-waldorf"
+                  required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="area">Area</Label>
-                <select
-                  id="area"
-                  value={selectedArea}
-                  onChange={(e) => setSelectedArea(e.target.value)}
-                  className="input-waldorf w-full"
+
+              <div>
+                <label htmlFor="area" className="block text-sm font-medium mb-2">
+                  Area
+                </label>
+                <Select
+                  value={newSlot.area}
+                  onValueChange={(value) => setNewSlot({ ...newSlot, area: value })}
                 >
-                  <option value="">Seleziona area...</option>
-                  {CLEANING_AREAS.map(area => (
-                    <option key={area} value={area}>{area}</option>
-                  ))}
-                </select>
+                  <SelectTrigger className="input-waldorf">
+                    <SelectValue placeholder="Seleziona area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CLEANING_AREAS.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <Button type="submit" className="btn-waldorf" disabled={loading}>
-              {loading ? 'Creando...' : 'Crea Turno di Pulizie'}
+
+            <Button type="submit" disabled={isLoading} className="btn-waldorf">
+              <Plus className="h-4 w-4 mr-2" />
+              Crea Slot
             </Button>
           </form>
         </CardContent>
@@ -321,3 +398,5 @@ export const CleaningCalendar = () => {
     </div>
   );
 };
+
+export default CleaningCalendar;
