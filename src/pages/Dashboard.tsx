@@ -22,7 +22,7 @@ const Dashboard = () => {
       {/* Header with banner and logout */}
       <div className="relative">
         <img 
-          src="/src/assets/waldorf-community-banner.jpg" 
+          src="/waldorf-community-banner.jpg" 
           alt="Comunità Waldorf" 
           className="w-full h-48 object-cover"
         />
@@ -64,7 +64,7 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-card border border-border rounded-2xl p-2">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-card border border-border rounded-2xl p-2">
             <TabsTrigger 
               value="time-tracker" 
               className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center gap-2"

@@ -36,7 +36,6 @@ const CleaningCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [newSlot, setNewSlot] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
-    time: '',
     area: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -148,7 +147,7 @@ const CleaningCalendar = () => {
   const createNewSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newSlot.time || !newSlot.area) {
+    if (!newSlot.area) {
       toast({
         title: "Errore",
         description: "Compila tutti i campi obbligatori",
@@ -168,7 +167,7 @@ const CleaningCalendar = () => {
         .from('cleaning_slots')
         .insert({
           date: newSlot.date,
-          time: newSlot.time,
+          time: '09:00',
           area: newSlot.area,
           max_slots: 2
         });
@@ -177,7 +176,6 @@ const CleaningCalendar = () => {
 
       setNewSlot({
         date: format(new Date(), 'yyyy-MM-dd'),
-        time: '',
         area: ''
       });
 
@@ -223,7 +221,7 @@ const CleaningCalendar = () => {
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-3xl font-bold text-waldorf-earth mb-2">Calendario delle Pulizie</h2>
-        <p className="text-muted-foreground">Seleziona una data per vedere i turni disponibili</p>
+        <p className="text-muted-foreground">Visualizza i turni disponibili e iscriviti</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -266,25 +264,28 @@ const CleaningCalendar = () => {
           </CardContent>
         </Card>
 
-        {/* Selected Date Slots */}
+        {/* All Available Slots */}
         <Card className="card-waldorf">
           <CardHeader>
             <CardTitle className="text-waldorf-moss">
-              Turni per {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'Seleziona una data'}
+              Tutti i Turni Disponibili
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {selectedDateSlots.length === 0 ? (
+          <CardContent className="max-h-96 overflow-y-auto">
+            {slots.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                Nessun turno disponibile per questa data.
+                Nessun turno disponibile.
               </p>
             ) : (
               <div className="space-y-4">
-                {selectedDateSlots.map((slot) => (
+                {slots.map((slot) => (
                   <div key={slot.id} className="border border-border rounded-xl p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
                         <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(slot.date), 'dd/MM/yyyy')}
+                          </span>
                           <span className="flex items-center gap-1 font-medium">
                             <Clock className="h-4 w-4" />
                             {slot.time}
@@ -342,7 +343,7 @@ const CleaningCalendar = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={createNewSlot} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="date" className="block text-sm font-medium mb-2">
                   Data
@@ -352,20 +353,6 @@ const CleaningCalendar = () => {
                   type="date"
                   value={newSlot.date}
                   onChange={(e) => setNewSlot({ ...newSlot, date: e.target.value })}
-                  className="input-waldorf"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="time" className="block text-sm font-medium mb-2">
-                  Orario
-                </label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={newSlot.time}
-                  onChange={(e) => setNewSlot({ ...newSlot, time: e.target.value })}
                   className="input-waldorf"
                   required
                 />
