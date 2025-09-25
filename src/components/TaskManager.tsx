@@ -45,14 +45,7 @@ const TaskManager = () => {
   }, []);
 
   const loadTasks = async () => {
-    if (!currentFamily) return;
-    
     try {
-      await supabase.rpc('set_config', {
-        setting_name: 'app.current_family',
-        setting_value: currentFamily.username
-      });
-
       const { data, error } = await supabase
         .from('tasks')
         .select(`

@@ -64,27 +64,28 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-card border border-border rounded-2xl p-2">
+          <TabsList className="grid w-full grid-cols-3 bg-card border border-border rounded-2xl p-1">
             <TabsTrigger 
               value="time-tracker" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center gap-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center justify-center gap-1 text-xs sm:text-sm px-2 py-2"
             >
-              <Clock className="h-4 w-4" />
-              Registro Ore
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">Banca Ore</span>
+              <span className="xs:hidden sm:hidden">Ore</span>
             </TabsTrigger>
             <TabsTrigger 
               value="tasks" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center gap-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center justify-center gap-1 text-xs sm:text-sm px-2 py-2"
             >
-              <CheckSquare className="h-4 w-4" />
-              Compiti da Svolgere
+              <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Compiti</span>
             </TabsTrigger>
             <TabsTrigger 
               value="cleaning-calendar" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center gap-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center justify-center gap-1 text-xs sm:text-sm px-2 py-2"
             >
-              <Calendar className="h-4 w-4" />
-              Calendario Pulizie
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Pulizie</span>
             </TabsTrigger>
           </TabsList>
 
