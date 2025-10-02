@@ -57,7 +57,11 @@ This project requires Supabase configuration. To set up:
 
 You can find these values in your [Supabase project settings](https://supabase.com/dashboard/project/_/settings/api).
 
-**Note:** Never commit your `.env` file with actual credentials to version control.
+**Security Notes:**
+- Never commit your `.env` file with actual credentials to version control
+- Only use the `anon` (publishable) key in frontend code
+- The `service_role` key must NEVER be used in frontend code - it bypasses all security rules
+- Service role keys should only be used in serverless/edge functions where they cannot be exposed to clients
 
 ```
 
