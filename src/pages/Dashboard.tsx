@@ -24,37 +24,38 @@ const Dashboard = () => {
         <img 
           src="/waldorf-community-banner.jpg" 
           alt="Comunità Waldorf" 
-          className="w-full h-48 object-cover"
+          className="w-full h-32 md:h-48 object-cover"
         />
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center px-4">
           <div className="text-center text-white">
-            <h1 className="text-4xl font-bold mb-2">Comunità Waldorf</h1>
-            <p className="text-xl">Crescere insieme in armonia</p>
+            <h1 className="text-2xl md:text-4xl font-bold mb-1 md:mb-2">Comunità Waldorf</h1>
+            <p className="text-sm md:text-xl">Crescere insieme in armonia</p>
           </div>
         </div>
         {/* Logout button */}
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-2 md:top-4 right-2 md:right-4">
           <Button 
             onClick={logout}
             variant="secondary"
-            className="bg-white/10 text-white border border-white/20 hover:bg-white/20"
+            size="sm"
+            className="bg-white/10 text-white border border-white/20 hover:bg-white/20 text-xs md:text-sm"
           >
-            <LogOut className="h-4 w-4 mr-2" />
-            Esci
+            <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Esci</span>
           </Button>
         </div>
       </div>
 
       {/* Welcome Card */}
-      <div className="container mx-auto px-4 py-8">
-        <Card className="card-waldorf mb-8">
+      <div className="container mx-auto px-3 md:px-4 py-4 md:py-8">
+        <Card className="card-waldorf mb-4 md:mb-8">
           <CardHeader>
-            <CardTitle className="text-2xl text-waldorf-earth">
+            <CardTitle className="text-lg md:text-2xl text-waldorf-earth">
               Benvenuto, {currentFamily.display_name}! 👋
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground text-lg leading-relaxed">
+            <p className="text-muted-foreground text-sm md:text-lg leading-relaxed">
               Insieme costruiamo una comunità dove ogni famiglia contribuisce con il proprio tempo e le proprie energie. 
               Ogni piccolo gesto conta per creare un ambiente di apprendimento e crescita per i nostri bambini.
               La bellezza nasce dalla collaborazione e dall'amore che mettiamo in tutto ciò che facciamo.
@@ -63,41 +64,41 @@ const Dashboard = () => {
         </Card>
 
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-card border border-border rounded-2xl p-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full grid-cols-3 bg-card border border-border rounded-xl md:rounded-2xl p-1">
             <TabsTrigger 
               value="time-tracker" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center justify-center gap-1 text-xs sm:text-sm px-2 py-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg md:rounded-xl flex items-center justify-center gap-1 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-1.5 md:py-2"
             >
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">Banca Ore</span>
-              <span className="xs:hidden sm:hidden">Ore</span>
+              <Clock className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden xs:inline">Banca Ore</span>
+              <span className="xs:hidden">Ore</span>
             </TabsTrigger>
             <TabsTrigger 
               value="tasks" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center justify-center gap-1 text-xs sm:text-sm px-2 py-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg md:rounded-xl flex items-center justify-center gap-1 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-1.5 md:py-2"
             >
-              <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+              <CheckSquare className="h-3 w-3 md:h-4 md:w-4" />
               <span>Compiti</span>
             </TabsTrigger>
             <TabsTrigger 
               value="cleaning-calendar" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl flex items-center justify-center gap-1 text-xs sm:text-sm px-2 py-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg md:rounded-xl flex items-center justify-center gap-1 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-1.5 md:py-2"
             >
-              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Calendar className="h-3 w-3 md:h-4 md:w-4" />
               <span>Pulizie</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="time-tracker" className="space-y-6">
+          <TabsContent value="time-tracker">
             <TimeTracker />
           </TabsContent>
 
-          <TabsContent value="tasks" className="space-y-6">
+          <TabsContent value="tasks">
             <TaskManager />
           </TabsContent>
 
-          <TabsContent value="cleaning-calendar" className="space-y-6">
+          <TabsContent value="cleaning-calendar">
             <CleaningCalendar />
           </TabsContent>
         </Tabs>

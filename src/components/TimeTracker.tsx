@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Clock, Users, BarChart3, Trash2 } from 'lucide-react';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { Plus, Clock, Users, BarChart3, Trash2, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +28,8 @@ export const TimeTracker = () => {
   const [hours, setHours] = useState('');
   const [activity, setActivity] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { currentFamily } = useAuth();
 
@@ -37,6 +42,7 @@ export const TimeTracker = () => {
     if (!currentFamily) return;
     
     try {
+      setError(null);
       // Ensure session configuration is set before database operation
       const { error: configError } = await supabase.rpc('set_config', {
         setting_name: 'app.current_family',
@@ -45,7 +51,7 @@ export const TimeTracker = () => {
 
       if (configError) {
         console.error('Config error:', configError);
-        return;
+        throw new Error('Errore di configurazione');
       }
 
       const { data, error } = await supabase
@@ -62,11 +68,14 @@ export const TimeTracker = () => {
       setEntries(data || []);
     } catch (error) {
       console.error('Error loading entries:', error);
+      setError('Non è stato possibile caricare i contributi');
       toast({
         title: "Errore nel caricamento",
         description: "Non è stato possibile caricare i contributi",
         variant: "destructive",
       });
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -214,10 +223,24 @@ export const TimeTracker = () => {
     }))
     .sort((a, b) => b.ore - a.ore);
 
+  if (initialLoading) {
+    return <LoadingState message="Caricamento contributi..." />;
+  }
+
+  if (error) {
+    return (
+      <Card className="card-waldorf">
+        <CardContent className="p-6">
+          <ErrorState message={error} onRetry={loadEntries} />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         <Card className="card-waldorf">
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -240,18 +263,18 @@ export const TimeTracker = () => {
       </div>
 
       {/* Family Contributions Chart */}
-      {chartData.length > 0 && (
+      {chartData.length > 0 ? (
         <Card className="card-waldorf">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth">
-              <BarChart3 className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth text-base md:text-lg">
+              <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />
               Contributi per Famiglia
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 w-full">
+            <div className="h-48 md:h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="famiglia" 
@@ -259,11 +282,11 @@ export const TimeTracker = () => {
                     textAnchor="end"
                     height={80}
                     interval={0}
-                    fontSize={12}
+                    fontSize={10}
                     stroke="hsl(var(--muted-foreground))"
                   />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -282,19 +305,29 @@ export const TimeTracker = () => {
             </div>
           </CardContent>
         </Card>
+      ) : (
+        <Card className="card-waldorf">
+          <CardContent className="p-6">
+            <EmptyState 
+              icon={TrendingUp}
+              title="Nessun dato disponibile"
+              description="Aggiungi il tuo primo contributo per visualizzare le statistiche"
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Add Time Form */}
       <Card className="card-waldorf">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth">
-            <Plus className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 font-serif text-waldorf-earth text-base md:text-lg">
+            <Plus className="w-4 h-4 md:w-5 md:h-5" />
             Aggiungi il Tuo Contributo
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-2">
                 <Label htmlFor="family">Famiglia</Label>
                 <Input
@@ -339,32 +372,34 @@ export const TimeTracker = () => {
       {/* Recent Entries */}
       <Card className="card-waldorf">
         <CardHeader>
-          <CardTitle className="font-serif text-waldorf-earth">Contributi Recenti</CardTitle>
+          <CardTitle className="font-serif text-waldorf-earth text-base md:text-lg">Contributi Recenti</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {entries.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Nessun contributo ancora. Sii il primo ad aggiungere il tuo tempo!
-              </p>
+              <EmptyState 
+                icon={Clock}
+                title="Nessun contributo ancora"
+                description="Sii il primo ad aggiungere il tuo tempo!"
+              />
             ) : (
               entries.slice(0, 10).map(entry => (
-                <div key={entry.id} className="flex items-center justify-between p-3 bg-waldorf-cream rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium text-waldorf-earth">{entry.families?.display_name || 'Sconosciuto'}</p>
-                    <p className="text-sm text-muted-foreground">{entry.activity}</p>
+                <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-waldorf-cream rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-waldorf-earth text-sm md:text-base">{entry.families?.display_name || 'Sconosciuto'}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">{entry.activity}</p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-end gap-3">
                     <div className="text-right">
-                      <p className="font-semibold text-waldorf-moss">{entry.hours}h</p>
-                      <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString()}</p>
+                      <p className="font-semibold text-waldorf-moss text-sm md:text-base">{entry.hours}h</p>
+                      <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString('it-IT')}</p>
                     </div>
                     {currentFamily?.is_admin && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(entry.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 p-2"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 p-2 flex-shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

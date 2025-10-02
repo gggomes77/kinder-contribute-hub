@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { LoadingState } from "@/components/ui/loading-state";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { UserBadgeList } from "@/components/ui/user-badge-list";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Calendar as CalendarIcon, Users, Trash2 } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Users, Trash2, CheckSquare } from "lucide-react";
 import { format } from "date-fns";
 
 interface Task {
@@ -37,6 +41,8 @@ const TaskManager = () => {
     max_assignees: 1
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { currentFamily } = useAuth();
   const { toast } = useToast();
 
@@ -46,6 +52,7 @@ const TaskManager = () => {
 
   const loadTasks = async () => {
     try {
+      setError(null);
       const { data, error } = await supabase
         .from('tasks')
         .select(`
@@ -62,11 +69,14 @@ const TaskManager = () => {
       setTasks(data || []);
     } catch (error) {
       console.error('Error loading tasks:', error);
+      setError('Impossibile caricare i compiti');
       toast({
         title: "Errore",
         description: "Impossibile caricare i compiti",
         variant: "destructive"
       });
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -204,24 +214,38 @@ const TaskManager = () => {
     return !isUserSignedUp(task) && (task.assignments?.length || 0) < task.max_assignees;
   };
 
+  if (initialLoading) {
+    return <LoadingState message="Caricamento compiti..." />;
+  }
+
+  if (error) {
+    return (
+      <Card className="card-waldorf">
+        <CardContent className="p-6">
+          <ErrorState message={error} onRetry={loadTasks} />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-waldorf-earth mb-2">Compiti da Svolgere</h2>
-        <p className="text-muted-foreground">Gestione dei compiti della comunità</p>
+        <h2 className="text-2xl md:text-3xl font-bold text-waldorf-earth mb-2">Compiti da Svolgere</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Gestione dei compiti della comunità</p>
       </div>
 
       {currentFamily?.is_admin && (
         <Card className="card-waldorf">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-waldorf-moss">
-              <Plus className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-waldorf-moss text-base md:text-lg">
+              <Plus className="h-4 w-4 md:h-5 md:w-5" />
               Crea Nuovo Compito
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={createTask} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={createTask} className="space-y-3 md:space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Titolo</label>
                   <Input
@@ -274,78 +298,80 @@ const TaskManager = () => {
         </Card>
       )}
 
-      <div className="grid gap-4">
-        {tasks.map((task) => (
-          <Card key={task.id} className="card-waldorf">
+      <div className="grid gap-3 md:gap-4">
+        {tasks.length === 0 ? (
+          <Card className="card-waldorf">
             <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-waldorf-earth mb-2">{task.title}</h3>
-                  {task.description && (
-                    <p className="text-muted-foreground mb-3">{task.description}</p>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <CalendarIcon className="h-3 w-3" />
-                      {format(new Date(task.date), 'dd/MM/yyyy')}
-                    </Badge>
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {task.assignments?.length || 0}/{task.max_assignees}
-                    </Badge>
-                  </div>
-
-                  {task.assignments && task.assignments.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium mb-2">Iscritti:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {task.assignments.map((assignment) => (
-                          <Badge key={assignment.id} variant="default">
-                            {assignment.families.display_name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2 ml-4">
-                  {canSignUp(task) && (
-                    <Button 
-                      onClick={() => signUpForTask(task.id)}
-                      className="btn-waldorf"
-                      size="sm"
-                    >
-                      Iscriviti
-                    </Button>
-                  )}
-                  {isUserSignedUp(task) && (
-                    <Badge variant="default">Iscritto</Badge>
-                  )}
-                  {currentFamily?.is_admin && (
-                    <Button
-                      onClick={() => deleteTask(task.id)}
-                      variant="destructive"
-                      size="sm"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <EmptyState 
+                icon={CheckSquare}
+                title="Nessun compito disponibile"
+                description={currentFamily?.is_admin ? "Crea il primo compito per la comunità" : "Non ci sono compiti al momento"}
+              />
             </CardContent>
           </Card>
-        ))}
-      </div>
+        ) : (
+          tasks.map((task) => (
+            <Card key={task.id} className="card-waldorf">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col gap-4">
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start gap-4 mb-3">
+                      <h3 className="text-base md:text-xl font-semibold text-waldorf-earth">{task.title}</h3>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {canSignUp(task) && (
+                          <Button 
+                            onClick={() => signUpForTask(task.id)}
+                            className="btn-waldorf text-xs md:text-sm"
+                            size="sm"
+                          >
+                            Iscriviti
+                          </Button>
+                        )}
+                        {isUserSignedUp(task) && (
+                          <Badge variant="default" className="text-xs">Iscritto</Badge>
+                        )}
+                        {currentFamily?.is_admin && (
+                          <Button
+                            onClick={() => deleteTask(task.id)}
+                            variant="destructive"
+                            size="sm"
+                          >
+                            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {task.description && (
+                      <p className="text-sm md:text-base text-muted-foreground mb-3">{task.description}</p>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                        <CalendarIcon className="h-3 w-3" />
+                        {format(new Date(task.date), 'dd/MM/yyyy')}
+                      </Badge>
+                      <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                        <Users className="h-3 w-3" />
+                        {task.assignments?.length || 0}/{task.max_assignees}
+                      </Badge>
+                    </div>
 
-      {tasks.length === 0 && (
-        <Card className="card-waldorf">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">Nessun compito disponibile al momento.</p>
-          </CardContent>
-        </Card>
-      )}
+                    {task.assignments && task.assignments.length > 0 && (
+                      <UserBadgeList 
+                        users={task.assignments.map(a => ({ 
+                          id: a.id, 
+                          display_name: a.families.display_name 
+                        }))}
+                      />
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };
