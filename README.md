@@ -32,8 +32,33 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Set up environment variables.
+# Copy the .env.example file to .env and fill in your Supabase credentials
+cp .env.example .env
+# Then edit .env with your actual values
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
+```
+
+## Environment Variables
+
+This project requires Supabase configuration. To set up:
+
+1. Copy `.env.example` to `.env`:
+   ```sh
+   cp .env.example .env
+   ```
+
+2. Fill in your Supabase credentials in `.env`:
+   - `VITE_SUPABASE_PROJECT_ID`: Your Supabase project ID
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`: Your Supabase anon/public key
+   - `VITE_SUPABASE_URL`: Your Supabase project URL
+
+You can find these values in your [Supabase project settings](https://supabase.com/dashboard/project/_/settings/api).
+
+**Note:** Never commit your `.env` file with actual credentials to version control.
+
 ```
 
 **Edit a file directly in GitHub**
