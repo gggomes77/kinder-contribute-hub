@@ -35,6 +35,8 @@ const CLEANING_AREAS = [
   "Cucina", "Bagni", "Aule", "Corridoi", "Giardino", "Mensa"
 ];
 
+const ITEMS_PER_PAGE = 30;
+
 const CleaningCalendar = () => {
   const [slots, setSlots] = useState<CleaningSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -45,6 +47,7 @@ const CleaningCalendar = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const { currentFamily } = useAuth();
   const { toast } = useToast();
 
@@ -52,7 +55,7 @@ const CleaningCalendar = () => {
     loadSlots();
   }, []);
 
-  const loadSlots = async () => {
+  const loadSlots = async (append = false) => {
     if (!currentFamily) return;
     
     try {
@@ -62,7 +65,11 @@ const CleaningCalendar = () => {
         setting_value: currentFamily.username
       });
 
-      const { data, error } = await supabase
+      // Only load future slots (server-side filtering)
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const offset = append ? slots.length : 0;
+
+      const { data, error, count } = await supabase
         .from('cleaning_slots')
         .select(`
           *,
@@ -71,11 +78,16 @@ const CleaningCalendar = () => {
             family_id,
             families(display_name)
           )
-        `)
-        .order('date', { ascending: true });
+        `, { count: 'exact' })
+        .gte('date', today)
+        .order('date', { ascending: true })
+        .range(offset, offset + ITEMS_PER_PAGE - 1);
 
       if (error) throw error;
-      setSlots(data || []);
+      
+      const newSlots = append ? [...slots, ...(data || [])] : (data || []);
+      setSlots(newSlots);
+      setHasMore((count || 0) > newSlots.length);
     } catch (error) {
       console.error('Error loading slots:', error);
       setError('Impossibile caricare gli slot di pulizia');
@@ -352,6 +364,16 @@ const CleaningCalendar = () => {
                     </div>
                   </div>
                 ))}
+                {hasMore && (
+                  <Button
+                    onClick={() => loadSlots(true)}
+                    variant="outline"
+                    className="w-full mt-2"
+                    disabled={isLoading}
+                  >
+                    Carica altri turni
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>

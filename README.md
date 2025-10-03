@@ -92,6 +92,26 @@ This application uses a **custom family-based authentication system** with compr
 
 All RLS policies are defined in the `supabase/migrations/` folder and applied automatically.
 
+## Database Performance Optimizations
+
+### Indexes
+The database includes indexes on frequently queried columns for optimal performance:
+
+- **Family filtering**: Indexes on `family_id` columns across all tables
+- **Date queries**: Indexes on `date` and `created_at` columns for efficient time-based filtering
+- **Foreign keys**: Indexes on all relationship columns for fast joins
+- **Composite indexes**: Combined indexes for common query patterns (e.g., `family_id + date`)
+
+### Query Optimization
+All data fetching implements:
+
+1. **Server-side filtering**: Date ranges and conditions are applied at the database level
+2. **Pagination**: Data is loaded in chunks (20-50 items per page) to reduce initial load time
+3. **Incremental loading**: "Load more" buttons allow fetching additional data on demand
+4. **Targeted queries**: Only future/current data is fetched (old records are excluded)
+
+These optimizations ensure the app remains fast even as data grows over time.
+
 ```
 
 **Edit a file directly in GitHub**

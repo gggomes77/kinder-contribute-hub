@@ -23,6 +23,8 @@ interface TimeEntry {
   };
 }
 
+const ITEMS_PER_PAGE = 50;
+
 export const TimeTracker = () => {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [hours, setHours] = useState('');
@@ -30,6 +32,7 @@ export const TimeTracker = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const { toast } = useToast();
   const { currentFamily } = useAuth();
 
@@ -38,7 +41,7 @@ export const TimeTracker = () => {
     loadEntries();
   }, []);
 
-  const loadEntries = async () => {
+  const loadEntries = async (append = false) => {
     if (!currentFamily) return;
     
     try {
@@ -54,18 +57,29 @@ export const TimeTracker = () => {
         throw new Error('Errore di configurazione');
       }
 
-      const { data, error } = await supabase
+      // Get current year's data only (server-side filtering)
+      const currentYear = new Date().getFullYear();
+      const startDate = `${currentYear}-01-01`;
+      
+      const offset = append ? entries.length : 0;
+
+      const { data, error, count } = await supabase
         .from('time_contributions')
         .select(`
           *,
           families (
             display_name
           )
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .gte('date', startDate)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + ITEMS_PER_PAGE - 1);
 
       if (error) throw error;
-      setEntries(data || []);
+      
+      const newEntries = append ? [...entries, ...(data || [])] : (data || []);
+      setEntries(newEntries);
+      setHasMore((count || 0) > newEntries.length);
     } catch (error) {
       console.error('Error loading entries:', error);
       setError('Non è stato possibile caricare i contributi');
@@ -383,30 +397,42 @@ export const TimeTracker = () => {
                 description="Sii il primo ad aggiungere il tuo tempo!"
               />
             ) : (
-              entries.slice(0, 10).map(entry => (
-                <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-waldorf-cream rounded-lg">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-waldorf-earth text-sm md:text-base">{entry.families?.display_name || 'Sconosciuto'}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground truncate">{entry.activity}</p>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-3">
-                    <div className="text-right">
-                      <p className="font-semibold text-waldorf-moss text-sm md:text-base">{entry.hours}h</p>
-                      <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString('it-IT')}</p>
+              <>
+                {entries.map(entry => (
+                  <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-waldorf-cream rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-waldorf-earth text-sm md:text-base">{entry.families?.display_name || 'Sconosciuto'}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground truncate">{entry.activity}</p>
                     </div>
-                    {currentFamily?.is_admin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(entry.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 p-2 flex-shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <div className="flex items-center justify-between sm:justify-end gap-3">
+                      <div className="text-right">
+                        <p className="font-semibold text-waldorf-moss text-sm md:text-base">{entry.hours}h</p>
+                        <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString('it-IT')}</p>
+                      </div>
+                      {currentFamily?.is_admin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(entry.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 p-2 flex-shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {hasMore && (
+                  <Button
+                    onClick={() => loadEntries(true)}
+                    variant="outline"
+                    className="w-full mt-4"
+                    disabled={loading}
+                  >
+                    Carica altri contributi
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </CardContent>
