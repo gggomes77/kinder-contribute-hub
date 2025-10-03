@@ -57,11 +57,40 @@ This project requires Supabase configuration. To set up:
 
 You can find these values in your [Supabase project settings](https://supabase.com/dashboard/project/_/settings/api).
 
-**Security Notes:**
-- Never commit your `.env` file with actual credentials to version control
-- Only use the `anon` (publishable) key in frontend code
-- The `service_role` key must NEVER be used in frontend code - it bypasses all security rules
-- Service role keys should only be used in serverless/edge functions where they cannot be exposed to clients
+## Security Best Practices
+
+**CRITICAL**: The `service_role` key has full admin access to your database and bypasses all Row Level Security (RLS) policies.
+
+- ✅ **DO** use `service_role` keys only in serverless/edge functions on the backend
+- ✅ **DO** use the `anon` (publishable) key in your frontend code
+- ❌ **NEVER** expose `service_role` keys in frontend code, git repositories, or client-side applications
+- ❌ **NEVER** commit `.env` files containing real secrets to version control
+
+Using the `service_role` key in frontend code would allow anyone to access, modify, or delete any data in your database.
+
+## Row Level Security (RLS) Policies
+
+This application uses a **custom family-based authentication system** with comprehensive RLS policies:
+
+### Authentication Model
+- Users authenticate as "families" (not individual Supabase Auth users)
+- The current family is tracked via `current_setting('app.current_family')` 
+- Family membership is stored in `localStorage` and validated against the `families` table
+
+### Security Rules
+1. **Family Data Isolation**: Each family can only access and modify their own data
+2. **Admin Privileges**: Families with `is_admin = true` have elevated permissions
+3. **All tables have RLS enabled** with appropriate policies for SELECT, INSERT, UPDATE, and DELETE operations
+
+### Policy Summary by Table
+- **families**: Read-only for login; admins can create/update/delete families
+- **tasks**: Admins can manage; all families can view
+- **task_assignments**: Families can manage their own assignments
+- **cleaning_slots**: All can view/create; admins can update/delete
+- **cleaning_assignments**: Families can manage their own assignments
+- **time_contributions**: Families can create/update/delete their own; admins have full access
+
+All RLS policies are defined in the `supabase/migrations/` folder and applied automatically.
 
 ```
 
